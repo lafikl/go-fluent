@@ -267,9 +267,8 @@ func (f *Request) Send() (*http.Response, error) {
 
 // Create a new request
 func New() *Request {
-	f := &Request{}
-	f.header = map[string]string{}
-	f.backoff = backoff.NewExponentialBackOff()
-	f.err = nil
-	return f
+	return &Request{
+		header:  map[string]string{},
+		backoff: backoff.NewExponentialBackOff(),
+	}
 }
