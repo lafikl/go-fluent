@@ -29,8 +29,8 @@ type Request struct {
 	proxy     string
 }
 
-func (f *Request) newClient() *http.Client {
-	return &http.Client{Timeout: f.timeout}
+func (f *Request) newClient() http.Client {
+	return http.Client{Timeout: f.timeout}
 }
 
 func (f *Request) newRequest() (req *http.Request, err error) {
@@ -245,8 +245,7 @@ func (f *Request) do(c *http.Client) (*http.Response, error) {
 func (f *Request) Send() (*http.Response, error) {
 	c := *http.DefaultClient
 	if f.timeout != 0 {
-		nc := f.newClient()
-		c = *nc
+		c = f.newClient()
 	}
 
 	if f.proxy != "" {
