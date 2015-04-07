@@ -250,12 +250,13 @@ func (f *Request) do(c *http.Client) (*http.Response, error) {
 // This function has to be called as the last thing,
 // after setting the other properties
 func (f *Request) Send() (*http.Response, error) {
+        var c *http.Client
 	if f.client == nil { // create http client obj if non-set
-		c := *http.DefaultClient
 		if f.timeout != 0 {
-			nc := f.newClient()
-			c = *nc
+			c = f.newClient()
 		}
+	} else {
+		c = f.client
 	}
 
 	if f.proxy != "" {
@@ -270,7 +271,7 @@ func (f *Request) Send() (*http.Response, error) {
 		}
 	}
 
-	res, err := f.do(&c)
+	res, err := f.do(c)
 	return res, err
 }
 
