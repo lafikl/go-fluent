@@ -27,6 +27,7 @@ type Request struct {
 	backoff   *backoff.ExponentialBackOff
 	req       *http.Request
 	proxy     string
+	client    *http.Client
 }
 
 func (f *Request) newClient() *http.Client {
@@ -190,6 +191,12 @@ func (f *Request) Proxy(p string) *Request {
 	return f
 }
 
+// Set a HTTP client
+func (f *Request) Client(c *http.Client) *Request {
+	f.client = c
+	return f
+}
+
 func doReq(f *Request, c *http.Client) error {
 	var reqErr error
 	f.req, reqErr = f.newRequest()
@@ -243,25 +250,29 @@ func (f *Request) do(c *http.Client) (*http.Response, error) {
 // This function has to be called as the last thing,
 // after setting the other properties
 func (f *Request) Send() (*http.Response, error) {
-	c := *http.DefaultClient
+	if f.client == nil {
+		f.client = http.DefaultClient
+	}
 	if f.timeout != 0 {
-		nc := f.newClient()
-		c = *nc
+		f.client.Timeout = f.timeout
 	}
 
 	if f.proxy != "" {
 		proxyUrl, err := url.Parse(f.proxy)
-
 		if err != nil {
 			return nil, err
 		}
 
-		c.Transport = &http.Transport{
-			Proxy: http.ProxyURL(proxyUrl),
+		if f.client.Transport != nil {
+			f.client.Transport.(*http.Transport).Proxy = http.ProxyURL(proxyUrl)
+		} else {
+			f.client.Transport = &http.Transport{
+				Proxy: http.ProxyURL(proxyUrl),
+			}
 		}
 	}
 
-	res, err := f.do(&c)
+	res, err := f.do(f.client)
 	return res, err
 }
 
