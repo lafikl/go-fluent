@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	//"log"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -256,5 +258,33 @@ func TestProxiedRequest(t *testing.T) {
 func TestInvalidProxyURL(t *testing.T) {
 	if _, err := New().Proxy("%gh&%ij").Get("/").Send(); err == nil {
 		t.Fatal("Expecting error due to invalid proxy URL")
+	}
+}
+
+func TestClient(t *testing.T) {
+	ts := httptest.NewServer(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("ok"))
+		}),
+	)
+	defer ts.Close()
+	proxy, _ := url.Parse(ts.URL)
+
+	tr := &http.Transport{Proxy: http.ProxyURL(proxy)}
+	c := &http.Client{Transport: tr}
+	r := New()
+	r.Client(c)
+	res, err := r.Get("http://github.com").Send()
+	if err != nil {
+		t.Error(err)
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	res.Body.Close()
+	if err != nil {
+		t.Error(err)
+	}
+	if string(body) != "ok" {
+		t.Error("Incorrect response.")
 	}
 }
